@@ -432,30 +432,38 @@ function displaySentence(sentence) {
         // Always show niqqud
         wordSpan.textContent = getNiqqudForWord(word);
         
-        // Add click and touch events for all words
-        wordSpan.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (soundEnabled) {
-                speakWord(word);
-            }
-            if (getEmojiForWord(word)) {
-                showEmoji(word);
-            }
-        });
-        
-        wordSpan.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (soundEnabled) {
-                speakWord(word);
-            }
-            if (getEmojiForWord(word)) {
-                showEmoji(word);
-            }
-        });
-        
-        // Add highlighted class if word has an emoji
+        // Check if word needs explanation
         if (getEmojiForWord(word)) {
             wordSpan.classList.add('highlighted');
+            
+            // Add touch event for mobile devices
+            wordSpan.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent default touch behavior
+                showEmoji(word);
+                if (soundEnabled) {
+                    speakWord(word);
+                }
+            });
+            
+            // Add click event for desktop
+            wordSpan.addEventListener('click', (e) => {
+                e.preventDefault();
+                showEmoji(word);
+                if (soundEnabled) {
+                    speakWord(word);
+                }
+            });
+        } else if (soundEnabled) {
+            // Add sound for non-highlighted words when sound is enabled
+            wordSpan.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                speakWord(word);
+            });
+            
+            wordSpan.addEventListener('click', (e) => {
+                e.preventDefault();
+                speakWord(word);
+            });
         }
         
         sentenceElement.appendChild(wordSpan);
@@ -528,29 +536,10 @@ function setupEventListeners() {
         soundButton.style.backgroundColor = soundEnabled ? '#2ecc71' : '#3498db';
         soundButton.querySelector('.sound-text').textContent = soundEnabled ? 'כבה הקראה' : 'הפעל הקראה';
         
-        // Update click handlers for all words in current sentence
-        const words = sentenceElement.querySelectorAll('.word');
-        words.forEach(wordSpan => {
-            // Remove existing click handlers
-            const newWordSpan = wordSpan.cloneNode(true);
-            wordSpan.parentNode.replaceChild(newWordSpan, wordSpan);
-            
-            // Get the original word without niqqud
-            const word = newWordSpan.textContent;
-            const originalWord = Object.keys(knownWords).find(key => knownWords[key].niqqud === word) ||
-                               Object.keys(explainedWords).find(key => explainedWords[key].niqqud === word) ||
-                               word;
-            
-            // Add emoji click handler
-            if (getEmojiForWord(originalWord)) {
-                newWordSpan.addEventListener('click', () => showEmoji(originalWord));
-            }
-            
-            // Add sound functionality if enabled
-            if (soundEnabled) {
-                newWordSpan.addEventListener('click', () => speakWord(originalWord));
-            }
-        });
+        // Redisplay the current sentence to update click handlers
+        if (currentSentence) {
+            displaySentence(currentSentence);
+        }
     });
     
     // Next sentence
