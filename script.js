@@ -514,4 +514,15 @@ function setupEventListeners() {
 }
 
 // Initialize the game when the page loads
-document.addEventListener('DOMContentLoaded', initGame); 
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize speech synthesis on first user interaction
+    document.addEventListener('click', () => {
+        // Create a test utterance to initialize speech synthesis
+        const testUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(testUtterance);
+        // Remove the event listener after initialization
+        document.removeEventListener('click', arguments.callee);
+    }, { once: true });
+    
+    initGame();
+}); 
