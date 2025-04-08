@@ -485,11 +485,14 @@ function showEmoji(word) {
 function speakWord(word) {
     if (!soundEnabled) return;
     
+    // Get the niqqud version of the word
+    const wordWithNiqqud = getNiqqudForWord(word);
+    
     // Check if running on Android
     const isAndroid = /Android/i.test(navigator.userAgent);
     
     // Create a new utterance
-    const utterance = new SpeechSynthesisUtterance(word);
+    const utterance = new SpeechSynthesisUtterance(wordWithNiqqud);
     
     // Set Hebrew language
     utterance.lang = 'he-IL';
