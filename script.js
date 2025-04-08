@@ -432,27 +432,30 @@ function displaySentence(sentence) {
         // Always show niqqud
         wordSpan.textContent = getNiqqudForWord(word);
         
-        // Check if word needs explanation
+        // Add click and touch events for all words
+        wordSpan.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (soundEnabled) {
+                speakWord(word);
+            }
+            if (getEmojiForWord(word)) {
+                showEmoji(word);
+            }
+        });
+        
+        wordSpan.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (soundEnabled) {
+                speakWord(word);
+            }
+            if (getEmojiForWord(word)) {
+                showEmoji(word);
+            }
+        });
+        
+        // Add highlighted class if word has an emoji
         if (getEmojiForWord(word)) {
             wordSpan.classList.add('highlighted');
-            
-            // Add touch event for mobile devices
-            wordSpan.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Prevent default touch behavior
-                showEmoji(word);
-                if (soundEnabled) {
-                    speakWord(word);
-                }
-            });
-            
-            // Add click event for desktop
-            wordSpan.addEventListener('click', (e) => {
-                e.preventDefault();
-                showEmoji(word);
-                if (soundEnabled) {
-                    speakWord(word);
-                }
-            });
         }
         
         sentenceElement.appendChild(wordSpan);
@@ -474,21 +477,47 @@ function showEmoji(word) {
 function speakWord(word) {
     if (!soundEnabled) return;
     
+    // Check if running on Android
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
     // Create a new utterance
     const utterance = new SpeechSynthesisUtterance(word);
     
     // Set Hebrew language
     utterance.lang = 'he-IL';
     
-    // Set voice to Hebrew if available
-    const voices = window.speechSynthesis.getVoices();
-    const hebrewVoice = voices.find(voice => voice.lang === 'he-IL');
-    if (hebrewVoice) {
-        utterance.voice = hebrewVoice;
+    // Different handling for Android
+    if (isAndroid) {
+        // Try alternative approach for Android
+        try {
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            // Use a short timeout to ensure the speech engine is ready
+            setTimeout(() => {
+                // Set volume and rate for better chances on Android
+                utterance.volume = 1;
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                
+                // Speak the word
+                window.speechSynthesis.speak(utterance);
+            }, 100);
+        } catch (e) {
+            console.error("Speech synthesis failed on Android:", e);
+        }
+    } else {
+        // Normal handling for other devices
+        // Set voice to Hebrew if available
+        const voices = window.speechSynthesis.getVoices();
+        const hebrewVoice = voices.find(voice => voice.lang === 'he-IL');
+        if (hebrewVoice) {
+            utterance.voice = hebrewVoice;
+        }
+        
+        // Speak the word
+        window.speechSynthesis.speak(utterance);
     }
-    
-    // Speak the word
-    window.speechSynthesis.speak(utterance);
 }
 
 // Setup event listeners
@@ -542,18 +571,37 @@ function setupEventListeners() {
 
 // Initialize the game when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize speech synthesis on first user interaction
-    document.addEventListener('click', () => {
-        // Create a test utterance to initialize speech synthesis
-        const testUtterance = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(testUtterance);
+    // Initialize speech synthesis for Android
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
+    // Special initialization for Android
+    if (isAndroid) {
+        // Force immediate initialization for Android devices
+        window.speechSynthesis.cancel();
         
-        // Load voices after initialization
-        window.speechSynthesis.onvoiceschanged = () => {
-            // Remove the event listener after initialization
-            document.removeEventListener('click', arguments.callee);
+        // Add multiple interaction events to initialize speech on Android
+        const initSpeech = () => {
+            const testUtterance = new SpeechSynthesisUtterance('');
+            testUtterance.volume = 0;
+            window.speechSynthesis.speak(testUtterance);
         };
-    }, { once: true });
+        
+        document.addEventListener('click', initSpeech, { once: true });
+        document.addEventListener('touchstart', initSpeech, { once: true });
+    } else {
+        // Initialize speech synthesis on first user interaction for other devices
+        document.addEventListener('click', () => {
+            // Create a test utterance to initialize speech synthesis
+            const testUtterance = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(testUtterance);
+            
+            // Load voices after initialization
+            window.speechSynthesis.onvoiceschanged = () => {
+                // Remove the event listener after initialization
+                document.removeEventListener('click', arguments.callee);
+            };
+        }, { once: true });
+    }
     
     initGame();
 }); 
