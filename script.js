@@ -435,12 +435,24 @@ function displaySentence(sentence) {
         // Check if word needs explanation
         if (getEmojiForWord(word)) {
             wordSpan.classList.add('highlighted');
-            wordSpan.addEventListener('click', () => showEmoji(word));
-        }
-        
-        // Add sound functionality if enabled
-        if (soundEnabled) {
-            wordSpan.addEventListener('click', () => speakWord(word));
+            
+            // Add touch event for mobile devices
+            wordSpan.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent default touch behavior
+                showEmoji(word);
+                if (soundEnabled) {
+                    speakWord(word);
+                }
+            });
+            
+            // Add click event for desktop
+            wordSpan.addEventListener('click', (e) => {
+                e.preventDefault();
+                showEmoji(word);
+                if (soundEnabled) {
+                    speakWord(word);
+                }
+            });
         }
         
         sentenceElement.appendChild(wordSpan);
