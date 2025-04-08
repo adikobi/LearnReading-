@@ -458,10 +458,25 @@ function showEmoji(word) {
     }
 }
 
-// Speak a word
+// Function to speak a word
 function speakWord(word) {
-    speech.text = word;
-    window.speechSynthesis.speak(speech);
+    if (!soundEnabled) return;
+    
+    // Create a new utterance
+    const utterance = new SpeechSynthesisUtterance(word);
+    
+    // Set Hebrew language
+    utterance.lang = 'he-IL';
+    
+    // Set voice to Hebrew if available
+    const voices = window.speechSynthesis.getVoices();
+    const hebrewVoice = voices.find(voice => voice.lang === 'he-IL');
+    if (hebrewVoice) {
+        utterance.voice = hebrewVoice;
+    }
+    
+    // Speak the word
+    window.speechSynthesis.speak(utterance);
 }
 
 // Setup event listeners
@@ -520,8 +535,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create a test utterance to initialize speech synthesis
         const testUtterance = new SpeechSynthesisUtterance('');
         window.speechSynthesis.speak(testUtterance);
-        // Remove the event listener after initialization
-        document.removeEventListener('click', arguments.callee);
+        
+        // Load voices after initialization
+        window.speechSynthesis.onvoiceschanged = () => {
+            // Remove the event listener after initialization
+            document.removeEventListener('click', arguments.callee);
+        };
     }, { once: true });
     
     initGame();
